@@ -1,0 +1,28 @@
+archive: 'deploy.zip'
+
+requirements:
+    PHP:
+        - {key: 'Core.PHP Version', value: '>=5.3', message: 'The PHP version must be 5.3 or upper'}
+        - {key: 'Core.PHP Version', value: '<7', message: 'The PHP version must be lower than 7'}
+        - {key: 'PDO.PDO support', value: 'enabled', message: 'PHP PDO module must be installed and enabled'}
+        - {key: 'PDO.PDO drivers', value: '~mysql', message: 'PHP PDO module must support MySQL databases'}
+        - {key: 'ctype.ctype functions', value: 'enabled', message: 'PHP ctype module must be installed and enabled'}
+        - {key: 'json.json support', value: 'enabled', message: 'PHP json module must be installed and enabled'}
+    Apache:
+        - {key: 'apache2handler.Loaded Modules', value: '~mod_rewrite', message: 'Modue rewrite must be installed and enabled'}
+
+sql: 'dump.sql'
+
+after_install:
+    - 'php bin/console doctrine:schema:update --force'
+    - 'php bin/console assetic:dump --env=prod'
+
+steps:
+    - 'Start'
+    - 'Checking'
+    - 'Install'
+    - 'Finalise'
+
+title: "Melody Installer"
+
+

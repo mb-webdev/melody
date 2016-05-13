@@ -255,30 +255,35 @@ class Common {
     private function installSql()
     {
         $errors = array();
-        $file = $this->resourcesDir . '/' . $this->getKey('sql');
-        if ($file !== null && file_exists($file)) {
-            $config = file_get_contents($this->installationDir . '/app/config/parameters.yml');
-            $config = Yaml::parse($config);
-            $config = $config['parameters'];
+        $file = $this->getKey('sql');
+        if ($file) {
+            $file = $this->resourcesDir . '/' . $file;
+            if (file_exists($file)) {
+                $config = file_get_contents($this->installationDir . '/app/config/parameters.yml');
+                $config = Yaml::parse($config);
+                $config = $config['parameters'];
 
-            try {
-                $host = $config['database_host'];
-                $port = $config['database_port'];
-                $name = $config['database_name'];
-                $user = $config['database_user'];
-                $pswd = $config['database_password'];
-                if ($port != '') {
-                    $conn = new PDO('mysql: host=' . $host . ';dbname=' . $name . ';port=' . $port, $user, $pswd);
-                } else {
-                    $conn = new PDO('mysql: host=' . $host . ';dbname=' . $name, $user, $pswd);
+                try {
+                    $host = $config['database_host'];
+                    $port = $config['database_port'];
+                    $name = $config['database_name'];
+                    $user = $config['database_user'];
+                    $pswd = $config['database_password'];
+                    if ($port != '') {
+                        $conn = new PDO('mysql: host=' . $host . ';dbname=' . $name . ';port=' . $port, $user, $pswd);
+                    } else {
+                        $conn = new PDO('mysql: host=' . $host . ';dbname=' . $name, $user, $pswd);
+                    }
+                    $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+                    $query = file_get_contents($file);
+                    $conn->exec($query);
+
+                } catch (PDOException $e) {
+                    $errors[] = "Connection failed: " . $e->getMessage();
                 }
-                $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-
-                $query = file_get_contents($file);
-                $conn->exec($query);
-
-            } catch (PDOException $e) {
-                $errors[] = "Connection failed: " . $e->getMessage();
+            } else {
+                $errors[] = "SQL file '" . $file . "' not found.";
             }
         } else {
             return null;

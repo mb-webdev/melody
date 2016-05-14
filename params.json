@@ -1,0 +1,6 @@
+{
+  "name": "Melody",
+  "tagline": "Easy web installer for redistribuing Symfony projects",
+  "body": "# melody\r\nEasy web installer for redistribuing Symfony projects.\r\n\r\n-\r\n\r\nMelody is a simple web installer for deploying and delivering a Symfony project to people who don't want or can't execute manual installation.\r\n\r\n## How to use\r\n\r\nAll explanation are listed in the first page of the installer. Just follow them and change everything you want. But if you want a quick tour, here are the short ones:\r\n\r\n### Creating the installer\r\n- Put a zip with your project in the ```resources``` folder (the zip must not include the vendors or the ```app/config/parameters.yml``` file).\r\n- Include a SQL dump if you want\r\n- List all your requirements (PHP, Apache, mods, etc..) in the configuration file\r\n- Change whatever you want (if you want to)\r\n- Zip everything\r\n- Distribute your awsome installer\r\n\r\n### Using the installer\r\n- Unzip in ```/var/www/my_website/web/melody```\r\n- Go to http://my_website/melody\r\n- Install\r\n- Enjoy\r\n\r\n## Demo\r\n\r\nComing soon",
+  "note": "Don't delete this file! It's used internally to help with page regeneration."
+}

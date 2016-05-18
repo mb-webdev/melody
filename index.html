@@ -24,42 +24,107 @@
 
 <p>Easy web installer for redistribuing Symfony projects.</p>
 
-<h2></h2>
+<hr>
 
 <p>Melody is a simple web installer for deploying and delivering a Symfony project to people who don't want or can't execute manual installation.</p>
 
 <h2>
-<a id="how-to-use" class="anchor" href="#how-to-use" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>How to use</h2>
+<a id="how-to-create-the-installer" class="anchor" href="#how-to-create-the-installer" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>How to create the installer</h2>
 
-<p>All explanation are listed in the first page of the installer. Just follow them and change everything you want. But if you want a quick tour, here are the short ones:</p>
-
-<h3>
-<a id="creating-the-installer" class="anchor" href="#creating-the-installer" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Creating the installer</h3>
+<p>There is a lot of steps and options to configure to create the installer for your Symfony project, but the hardest part is already done. All you have to to is :</p>
 
 <ul>
-<li>Put a zip with your project in the <code>resources</code> folder (the zip must not include the vendors or the <code>app/config/parameters.yml</code> file).</li>
-<li>Include a SQL dump if you want</li>
-<li>List all your requirements (PHP, Apache, mods, etc..) in the configuration file</li>
-<li>Change whatever you want (if you want to)</li>
-<li>Zip everything</li>
-<li>Distribute your awsome installer</li>
+<li>providing the files (zip and, if you want, sql)</li>
+<li>configuring the file <code>config.yml</code>
+</li>
 </ul>
 
+<p>The first step may be easy, but the second one need some explanations. Here is a complete version of the config file :</p>
+
+<pre><code>archive:
+    # Required
+    # The name of the zip containing your Symfony project
+    # and located in the 'resources' folder
+    filename: 'archive.zip'
+
+    # Optional, default : false
+    # Indicate if the zip contains the vendors too
+    # Required if the server can't execute shell, like a shared hosting
+    contains_vendors: false
+
+    # Optional, default : false
+    # Indicate if the zip already contains the bundle's assets in /web
+    # Required if the server can't execute shell, like a shared hosting
+    contains_installed_assets: false
+
+# Required
+# The list of requirements (taken from the PHPinfo)
+# Use names to clearly identify sections (like 'PHP' and 'Apache')
+# Key is the path of the field to check
+# Value is the required value
+# use &lt; or &lt;= or &gt; or &gt;= to compare number and version number
+# use ~ to find the value somewhere in the string
+# Message is the error message to display if the requirement does not match
+requirements:
+    PHP:
+        - {key: 'Core.PHP Version', value: '&gt;=5.3', message: 'The PHP version must be 5.3 or upper'}
+        - {key: 'Core.PHP Version', value: '&lt;7', message: 'The PHP version must be lower than 7'}
+        - {key: 'PDO.PDO support', value: 'enabled', message: 'PHP PDO module must be installed and enabled'}
+        - {key: 'PDO.PDO drivers', value: '~mysql', message: 'PHP PDO module must support MySQL databases'}
+        - {key: 'ctype.ctype functions', value: 'enabled', message: 'PHP ctype module must be installed and enabled'}
+        - {key: 'json.json support', value: 'enabled', message: 'PHP json module must be installed and enabled'}
+    Apache:
+        - {key: 'apache2handler.Loaded Modules', value: '~mod_rewrite', message: 'Modue rewrite must be installed and enabled'}
+
+# Optional, default : null
+# The name of the sql file to import during the installation
+# and located in the 'resources' folder
+sql: 'dump.sql'
+
+# Optional, default : null
+# The list of bash commands to execute after the installation
+after_install:
+    - 'php bin/console assets:install --env=prod'
+    - 'php bin/console assetic:dump --env=prod'
+
+# Required
+# The list of steps to display in the breadcrumbs
+steps:
+    - 'Start'
+    - 'Checking'
+    - 'Install'
+    - 'Finalise'
+
+# Required
+# The title of the installer
+title: "Melody Installer"
+
+</code></pre>
+
+<p>As you can see, there is a lot of options, but everything is in this only file, so take the time to clearly understand what every key exactly do.</p>
+
+<p>Once everything is configured, don't forget to change the layout of the installer to match with your. You change anything you want. And if your are a developer, feel free to add/edit/remove steps in the process to match with your expectations. The ony thing you have to do is playing with the smalls php files at the root of the installer.</p>
+
+<p>Once everything is OK, don't forget to play your installer to see if everything is OK, but ALWAYS BACKUP YOUR INSTALLER FIRST !</p>
+
+<p>Now you can zip everything and spread your installer to the world.</p>
+
 <h3>
-<a id="using-the-installer" class="anchor" href="#using-the-installer" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Using the installer</h3>
+<a id="using-the-installer-as-a-client" class="anchor" href="#using-the-installer-as-a-client" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Using the installer as a client</h3>
 
 <ul>
-<li>Unzip in <code>/var/www/my_website/web/melody</code>
+<li>Unzip the content of the installer in <code>/var/www/my_website/web/melody</code>
 </li>
 <li>Go to http://my_website/melody</li>
 <li>Install</li>
 <li>Enjoy</li>
 </ul>
 
-<h2>
-<a id="demo" class="anchor" href="#demo" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Demo</h2>
+      <footer class="site-footer">
+        <span class="site-footer-owner"><a href="https://github.com/mb-webdev/melody">Melody</a> is maintained by <a href="https://github.com/mb-webdev">mb-webdev</a>.</span>
 
-<p>Coming soon</p>
+        <span class="site-footer-credits">This page was generated by <a href="https://pages.github.com">GitHub Pages</a> using the <a href="https://github.com/jasonlong/cayman-theme">Cayman theme</a> by <a href="https://twitter.com/jasonlong">Jason Long</a>.</span>
+      </footer>
 
     </section>
 

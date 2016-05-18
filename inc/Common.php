@@ -13,11 +13,16 @@ class Common {
     {
         $this->cache = array();
         $this->installationDir = realpath(dirname(__FILE__) . '/../../..');
-        $this->melodyDir = realpath($this->installationDir . '/web/melody');
+        $this->melodyDir = realpath(dirname(__FILE__) . '/..');
         $this->resourcesDir = realpath($this->melodyDir . '/resources');
         $this->lockFile = $this->installationDir . '/melody.lock';
     }
 
+    /**
+     * Check if the current user is allowed to access to the installer
+     *
+     * @return boolean
+     */
     public function identifyAccess()
     {
         if (session_status() == PHP_SESSION_NONE) {
@@ -39,6 +44,12 @@ class Common {
         }
     }
 
+    /**
+     * Generate the breadcrumbs
+     *
+     * @param unknown $current
+     * @return string
+     */
     public function generateSteps($current)
     {
         $steps = $this->getKey('steps');
@@ -52,6 +63,9 @@ class Common {
         return $out;
     }
 
+    /**
+     * Remove the installation directory and the lock file
+     */
     public function removeMelody()
     {
         $this->rrmdir($this->melodyDir);
@@ -60,54 +74,101 @@ class Common {
         }
     }
 
+    /**
+     * Perform the following tasks :
+     *     - install sql dump if defined
+     *     - download composer if needed
+     *     - download and install vendors if needed
+     *     - install assets if needed
+     *     - run custom commands if defined
+     *
+     * @return array
+     */
     public function finalizeInstall()
     {
         $output = array('status' => true);
 
+        /**
+         * Installing sql dump
+         */
         $key = 'Installing database';
         $sql = $this->installSql();
         if ($sql !== null) {
             $output[$key] = $sql;
-            if ($output[$key]['status'] !== true) {
+            if (!$output[$key]->getStatus()) {
                 $output['status'] = false;
                 return $output;
             }
         }
 
-        $key = 'Downloading Composer';
-        $commandOutput = array();
-        $return = 0;
-        exec('wget https://getcomposer.org/composer.phar -O composer.phar', $commandOutput, $return);
-        $output[$key] = $this->fillReport(($return === 0), $commandOutput);
-        if ($output[$key]['status'] !== true) {
-            $output['status'] = false;
-            return $output;
-        }
-
-        $key = 'Doownloading and installing vendors';
-        $commandOutput = array();
-        $return = 0;
-        putenv('COMPOSER_HOME=' . $this->melodyDir . '/composer');
-        exec('cd ' . $this->installationDir . '; php ' . $this->melodyDir . '/composer.phar install', $commandOutput, $return);
-        $output[$key] = $this->fillReport(($return === 0), $commandOutput);
-        if ($output[$key]['status'] !== true) {
-            $output['status'] = false;
-            return $output;
-        }
-
-        $key = 'Running custom scripts';
-        $scripts = $this->installCustomScripts();
-        if ($scripts !== null) {
-            $output[$key] = $scripts;
-            if ($output[$key]['status'] !== true) {
+        /**
+         * Installing vendors
+         */
+        if ($this->needInstallVendors()) {
+            $key = 'Downloading Composer';
+            $commandOutput = array();
+            $return = 0;
+            exec('wget https://getcomposer.org/composer.phar -O composer.phar', $commandOutput, $return);
+            $output[$key] = new Report(($return === 0), $commandOutput);
+            if (!$output[$key]->getStatus()) {
                 $output['status'] = false;
                 return $output;
+            }
+
+            $key = 'Downloading and installing vendors';
+            $commandOutput = array();
+            $return = 0;
+            putenv('COMPOSER_HOME=' . $this->melodyDir . '/composer');
+            exec('cd ' . $this->installationDir . '; php ' . $this->melodyDir . '/composer.phar install', $commandOutput, $return);
+            $output[$key] = new Report(($return === 0), $commandOutput);
+            if (!$output[$key]->getStatus()) {
+                $output['status'] = false;
+                return $output;
+            }
+        }
+
+        /**
+         * Installing assets
+         */
+        if ($this->needInstallAssets()) {
+            $key = 'Installing assets';
+            $consolePath = '';
+            if (file_exists($this->installationDir .  '/app/console')) {
+                $consolePath = 'app/console';
+            } else if (file_exists($this->installationDir . '/bin/console')) {
+                $consolePath = 'bin/console';
+            }
+            $assets = $this->runCommand('php ' . $consolePath . ' assets:install --env=prod');
+            $output[$key] = $assets;
+            if (!$output[$key]->getStatus()) {
+                $output['status'] = false;
+                return $output;
+            }
+        }
+
+        /**
+         * Running custom commands
+         */
+        if ($this->needRunCustomCommands()) {
+            $key = 'Running custom scripts';
+            $scripts = $this->installCustomScripts();
+            if ($scripts !== null) {
+                $output[$key] = $scripts;
+                if (!$output[$key]->getStatus()) {
+                    $output['status'] = false;
+                    return $output;
+                }
             }
         }
 
         return $output;
     }
 
+    /**
+     * Get the form to use to generate the parameters.yml file
+     *
+     * @return string|bool
+     */
     public function getConfigurator()
     {
         if (!file_exists($this->installationDir .  '/app/config/parameters.yml.dist')) {
@@ -125,30 +186,41 @@ class Common {
         return $this->getForm($parameters['parameters']);
     }
 
+    /**
+     * Unzip the archive
+     *
+     * @return Report
+     */
     public function deployArchive()
     {
-        $output = array();
-        $output['status'] = true;
-        $archive = $this->resourcesDir . '/' . $this->getKey('archive');
+        $output = new Report(true);
+
+        $archive = $this->resourcesDir . '/' . $this->getKey('archive.filename');
         if (!file_exists($archive)) {
-            $output['extract'] = "Abording, archive '" . $archive . "' not found !";
-            $output['status'] = false;
+            $output->setStatus(false);
+            $output->setContent("Abording, archive '" . $archive . "' not found !");
         } else if (!is_writable($this->installationDir)) {
-            $output['extract'] = "Abording, directory '" . $this->installationDir . "' is not writable !";
-            $output['status'] = false;
+            $output->setStatus(false);
+            $output->setContent("Abording, directory '" . $this->installationDir . "' is not writable !");
         } else {
             $zip = new ZipArchive();
             if ($zip->open($archive) === true) {
                 $zip->extractTo($this->installationDir);
             } else {
-                $output['extract'] = "Abording, archive '" . $archive . "' not readable !";
-                $output['status'] = false;
+                $output->setStatus(false);
+                $output->setContent("Abording, archive '" . $archive . "' not readable !");
             }
         }
 
         return $output;
     }
 
+    /**
+     * Return the value from the config.yml file for the given configuration key
+     *
+     * @param string $path
+     * @return string|array|null
+     */
     public function getKey($path)
     {
         $keys = explode('.', $path);
@@ -165,6 +237,12 @@ class Common {
         return $node;
     }
 
+    /**
+     * Check if the given requirements match with the server configuration
+     *
+     * @param array $requirements
+     * @return array(array global, array sections, bool status)
+     */
     public function checkPHPInfo(array $requirements)
     {
         $result = array(
@@ -173,12 +251,20 @@ class Common {
             'status' => true
         );
 
-        $return = 0;
-        $commandOutput = array();
-        exec('php -v', $commandOutput, $return);
-        if ($return !== 0) {
-            $result['global'][] = 'PHP must be runnable in CLI mode.';
-            $result['status'] = false;
+        $needCli = false;
+
+        if ($this->needInstallVendors() || $this->needInstallAssets() || $this->needRunCustomCommands()) {
+            $needCli = true;
+        }
+
+        if ($needCli) {
+            $return = 0;
+            $commandOutput = array();
+            exec('php -v', $commandOutput, $return);
+            if ($return !== 0) {
+                $result['global'][] = 'This installer require PHP to be runnable in CLI mode.';
+                $result['status'] = false;
+            }
         }
 
         foreach ($requirements as $identifier => $section) {
@@ -234,6 +320,69 @@ class Common {
         return $result;
     }
 
+    /**
+     * Check if we need to install vendors
+     *
+     * @return bool
+     */
+    private function needInstallVendors() {
+        if (!isset($this->cache['needInstallVendors'])) {
+            $vendors = $this->getKey('archive.contains_vendors');
+
+            $return = false;
+            if ($vendors === null || $vendors == false) {
+                $return = true;
+            }
+
+            $this->cache['needInstallVendors'] = $return;
+        }
+        return $this->cache['needInstallVendors'];
+    }
+
+    /**
+     * Check if we need to install assets
+     *
+     * @return bool
+     */
+    private function needInstallAssets() {
+        if (!isset($this->cache['needInstallAssets'])) {
+            $assets = $this->getKey('archive.contains_installed_assets');
+
+            $return = false;
+            if ($assets === null || $assets == false) {
+                $return = true;
+            }
+
+            $this->cache['needInstallAssets'] = $return;
+        }
+        return $this->cache['needInstallAssets'];
+    }
+
+    /**
+     * Check if we need to run custom commands
+     *
+     * @return bool
+     */
+    private function needRunCustomCommands() {
+        if (!isset($this->cache['needRunCustomCommands'])) {
+            $commands = $this->getKey('after_install');
+
+            $return = false;
+            if ($commands !== null && is_array($commands) && !empty($commands)) {
+                $return = true;
+            }
+
+            $this->cache['needRunCustomCommands'] = $return;
+        }
+
+        return $this->cache['needRunCustomCommands'];
+    }
+
+    /**
+     * Remove recursively the given directory
+     *
+     * @param string $dir
+     */
     private function rrmdir($dir) {
        if (is_dir($dir)) {
          $objects = scandir($dir);
@@ -247,15 +396,11 @@ class Common {
        }
     }
 
-    private function fillReport($status, array $content = null)
-    {
-        $output = array(
-                'status' => $status,
-                'content' => $content
-        );
-        return $output;
-    }
-
+    /**
+     * Run all custom scripts if they are defined
+     *
+     * @return Report|null
+     */
     private function installCustomScripts()
     {
         $scripts = $this->getKey('after_install');
@@ -264,20 +409,40 @@ class Common {
             $return = true;
 
             foreach ($scripts as  $script) {
-                $commandReturn = 0;
-                $content[] = '===========================================================';
-                $content[] = '---> Executing command :' . $script;
-                $content[] = '===========================================================';
-                exec('cd ' . $this->installationDir . '; ' . $script, $content, $commandReturn);
-                if ($commandReturn !== 0) {
+                $commandOutput = $this->runCommand($script);
+                $content = array_merge($content, $commandOutput->getContent());
+
+                if (!$commandOutput->getStatus()) {
                     $return = false;
                 }
             }
-            return $this->fillReport($return, $content);
+            return new Report($return, $content);
         }
         return null;
     }
 
+    /**
+     * Run the given command in a shell
+     *
+     * @param string $script
+     * @return Report
+     */
+    private function runCommand($script) {
+        $content = array();
+        $commandReturn = 0;
+        $content[] = '===========================================================';
+        $content[] = '---> Executing command :' . $script;
+        $content[] = '===========================================================';
+        exec('cd ' . $this->installationDir . '; ' . $script, $content, $commandReturn);
+
+        return new Report(($commandReturn === 0), $content);
+    }
+
+    /**
+     * Perform the installation a the sql dump
+     *
+     * @return null|Report
+     */
     private function installSql()
     {
         $errors = array();
@@ -316,12 +481,18 @@ class Common {
         }
 
         if (!empty($errors)) {
-            return $this->fillReport(false, $errors);
+            return new Report(false, $errors);
         } else {
-            return $this->fillReport(true);
+            return new Report(true);
         }
     }
 
+    /**
+     * Return the html form to use to configure the parameters.yml file
+     *
+     * @param array $config
+     * @return boolean|string
+     */
     private function getForm($config)
     {
         $output = "";
@@ -353,6 +524,9 @@ class Common {
         return $output;
     }
 
+    /**
+     * Write the parameters.yml file
+     */
     private function writeSFConf()
     {
         $params = array('parameters' => array());
@@ -363,6 +537,12 @@ class Common {
         $yaml = Yaml::dump($params, 2);
         file_put_contents($this->installationDir . '/app/config/parameters.yml', $yaml);
     }
+
+    /**
+     * Validate the form used to configure the parameters.yml file
+     *
+     * @return array
+     */
     private function validateForm()
     {
         $errors = array();
@@ -417,6 +597,12 @@ class Common {
         return $errors;
     }
 
+    /**
+     * Convert a given version number or contraint number from string to int
+     *
+     * @param string $str
+     * @return int
+     */
     private function version2number($str)
     {
         $operator = substr($str, 0, 1);
@@ -439,6 +625,13 @@ class Common {
         return $number;
     }
 
+    /**
+     * Align two version numbers to the same decimal to easily compare them
+     *
+     * @param int $number1
+     * @param int $number2
+     * @return array(int, int)
+     */
     private function pad($number1, $number2)
     {
         $number1 = intval($number1, 10);
@@ -462,10 +655,16 @@ class Common {
         return array(intval($number1, 10), intval($number2, 10));
     }
 
+    /**
+     * Return the array version of the config.yml file
+     *
+     * @return array
+     */
     private function getConfig()
     {
         if (!isset($this->cache['getConfig'])) {
             if (!file_exists($this->resourcesDir . '/config.yml')) {
+                // It's a critical error. No layout, nothing, just display a big error message and stop here
                 echo "Abording, configuration file does not exists !";
                 die();
             }
@@ -475,6 +674,7 @@ class Common {
             try {
                 $content = $parser->parse($content);
             } catch(ParseException $e) {
+                // It's a critical error. No layout, nothing, just display a big error message and stop here
                 echo "Abording, " . $e->getMessage();
                 die();
             }
@@ -484,6 +684,11 @@ class Common {
         return $this->cache['getConfig'];
     }
 
+    /**
+     * Parse the PHPinfo into array
+     *
+     * @return array
+     */
     private function getPHPInfo()
     {
         if (!isset($this->cache['getPHPInfo'])) {
@@ -512,5 +717,67 @@ class Common {
             $this->cache['getPHPInfo'] = $r;
         }
         return $this->cache['getPHPInfo'];
+    }
+}
+
+
+
+class Report {
+    private $status = true;
+    private $content = array();
+    public function __construct($status, $content = null)
+    {
+        $this->setStatus($status);
+
+        $this->setContent($content);
+        if (!is_array($content)) {
+            $content = array($content);
+        }
+        $this->status = $status;
+        $this->content = $content;
+    }
+
+    public function getStatus()
+    {
+        return $this->status;
+    }
+
+    public function setStatus($status)
+    {
+        $this->status = $status;
+
+        return $this;
+    }
+
+    public function getContent()
+    {
+        return $this->content;
+    }
+
+    public function setContent($content)
+    {
+        $this->content = $this->parseContent($content);
+
+        return $this;
+    }
+
+    public function addContent($content)
+    {
+        $this->content = array_merge($this->content, $this->parseContent($content));
+
+        return $this;
+    }
+
+    private function parseContent($content)
+    {
+        if ($content === null) {
+            $content = array();
+        } else if (!is_array($content)) {
+            $content = array($content);
+        } else if ($content instanceof Report) {
+            $content = array('status' => $content->getStatus(), 'content' => $content->getContent());
+        }
+
+        return $content;
     }
 }

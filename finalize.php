@@ -27,9 +27,9 @@ if (!isset($_SESSION['configure']) || !$_SESSION['configure']) {
                 ?><table><?php
                     foreach ($steps as $step => $content) {
                         if ($step != "status") {
-                            ?><tr><td class="title"><?php echo $step ?></td><td class="title"><i class="fa <?php echo ($content['status'] ? 'fa-check green' : 'fa-close red')?>" aria-hidden="true"></i></td></tr><?php
-                            if (!$content['status']) {
-                                foreach ($content['content'] as $line) {
+                            ?><tr><td class="title"><?php echo $step ?></td><td class="title"><i class="fa <?php echo ($content->getStatus() ? 'fa-check green' : 'fa-close red')?>" aria-hidden="true"></i></td></tr><?php
+                            if (!$content->getStatus()) {
+                                foreach ($content->getContent() as $line) {
                                     ?><tr><td><?php echo $line ?></td></tr><?php
                                 }
                             }

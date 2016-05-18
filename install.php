@@ -10,9 +10,9 @@ if (!isset($_SESSION['check']) || !$_SESSION['check']) {
     $common = new Common();
     $installed = $common->deployArchive();
 
-    $_SESSION['install'] = $installed['status'];
+    $_SESSION['install'] = $installed->getStatus();
 
-    if ($installed['status']) {
+    if ($installed->getStatus()) {
         header('Location: ./configure.php');
     } else {
 
@@ -31,11 +31,8 @@ if (!isset($_SESSION['check']) || !$_SESSION['check']) {
                     echo $common->generateSteps($common->getKey('steps')[$stepNumber]);
 
                     ?><table><?php
-                        foreach ($installed as $key => $value) {
-                            if ($key != 'status') {
-                                ?><tr><td colspan="1" class="title"><?php echo $key ?></td></tr><?php
-                                ?><tr><td><?php echo $value ?></td></tr><?php
-                            }
+                        foreach ($installed->getContent() as $value) {
+                            ?><tr><td><?php echo $value ?></td></tr><?php
                         }
                     ?></table><?php
                 ?></div><?php

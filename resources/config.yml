@@ -1,5 +1,27 @@
-archive: 'archive.zip'
+archive:
+    # Required
+    # The name of the zip containing your Symfony project
+    # and located in the 'resources' folder
+    filename: 'archive.zip'
 
+    # Optional, default : false
+    # Indicate if the zip contains the vendors too
+    # Required if the server can't execute shell, like a shared hosting
+    contains_vendors: false
+
+    # Optional, default : false
+    # Indicate if the zip already contains the bundle's assets in /web
+    # Required if the server can't execute shell, like a shared hosting
+    contains_installed_assets: false
+
+# Required
+# The list of requirements (taken from the PHPinfo)
+# Use names to clearly identify sections (like 'PHP' and 'Apache')
+# Key is the path of the field to check
+# Value is the required value
+# use < or <= or > or >= to compare number and version number
+# use ~ to find the value somewhere in the string
+# Message is the error message to display if the requirement does not match
 requirements:
     PHP:
         - {key: 'Core.PHP Version', value: '>=5.3', message: 'The PHP version must be 5.3 or upper'}
@@ -11,12 +33,25 @@ requirements:
     Apache:
         - {key: 'apache2handler.Loaded Modules', value: '~mod_rewrite', message: 'Modue rewrite must be installed and enabled'}
 
-sql: null
+# Optional, default : null
+# The name of the sql file to import during the installation
+# and located in the 'resources' folder
+sql: 'dump.sql'
 
+# Optional, default : null
+# The list of bash commands to execute after the installation
+after_install:
+    - 'php bin/console assets:install --env=prod'
+    - 'php bin/console assetic:dump --env=prod'
+
+# Required
+# The list of steps to display in the breadcrumbs
 steps:
     - 'Start'
     - 'Checking'
     - 'Install'
     - 'Finalise'
 
+# Required
+# The title of the installer
 title: "Melody Installer"

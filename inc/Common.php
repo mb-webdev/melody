@@ -7,6 +7,7 @@ class Common {
     protected $installationDir;
     protected $melodyDir;
     protected $resourcesDir;
+    protected $lockFile;
 
     public function __construct()
     {
@@ -14,6 +15,28 @@ class Common {
         $this->installationDir = realpath(dirname(__FILE__) . '/../../..');
         $this->melodyDir = realpath($this->installationDir . '/web/melody');
         $this->resourcesDir = realpath($this->melodyDir . '/resources');
+        $this->lockFile = $this->installationDir . '/melody.lock';
+    }
+
+    public function identifyAccess()
+    {
+        if (session_status() == PHP_SESSION_NONE) {
+            session_start();
+        }
+        if (!isset($_SESSION['identifier_token'])) {
+            $token = md5(rand(0, time()));
+            $_SESSION['identifier_token'] = $token;
+        } else {
+            $token = $_SESSION['identifier_token'];
+        }
+
+        if (!file_exists($this->lockFile)) {
+            file_put_contents($this->lockFile, $token);
+            return true;
+        } else {
+            $registeredToken = file_get_contents($this->lockFile);
+            return ($registeredToken == $token);
+        }
     }
 
     public function generateSteps($current)
@@ -32,6 +55,9 @@ class Common {
     public function removeMelody()
     {
         $this->rrmdir($this->melodyDir);
+        if (file_exists($this->lockFile)) {
+            unlink($this->lockFile);
+        }
     }
 
     public function finalizeInstall()

@@ -6,6 +6,11 @@ require_once 'inc/Common.php';
 session_start();
 
 $common = new Common();
+
+if (!$common->identifyAccess()) {
+    header('Location: ./denied.php');
+}
+
 $_SESSION['index'] = true;
 
 $stepNumber = 0;

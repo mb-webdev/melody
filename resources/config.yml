@@ -1,4 +1,4 @@
-archive: 'deploy.zip'
+archive: 'archive.zip'
 
 requirements:
     PHP:
@@ -11,11 +11,7 @@ requirements:
     Apache:
         - {key: 'apache2handler.Loaded Modules', value: '~mod_rewrite', message: 'Modue rewrite must be installed and enabled'}
 
-sql: 'dump.sql'
-
-after_install:
-    - 'php bin/console doctrine:schema:update --force'
-    - 'php bin/console assetic:dump --env=prod'
+sql: null
 
 steps:
     - 'Start'
@@ -24,5 +20,3 @@ steps:
     - 'Finalise'
 
 title: "Melody Installer"
-
-

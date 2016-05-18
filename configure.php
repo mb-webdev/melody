@@ -29,12 +29,13 @@ if (!isset($_SESSION['install']) || !$_SESSION['install']) {
                 ?><div><?php
                     echo $common->generateSteps($common->getKey('steps')[$stepNumber]);
                     ?><form action="./configure.php" method="post"><?php
-                    echo $form;
-                    ?><div class="page-navigation"><?php
-                        ?><p>Warning. The installation process can take between 3 and 15 minutes, depending the list of tasks to execute. Don't be affraid, the page will still be displayed at the end. Just press start and go take a coffee.</p><?php
-                        ?><a class="btn" href="./configure.php">Reset</a><?php
-                        ?><button type="submit" class="btn btn-primary">Submit</button><?php
-                    ?></div><?php
+                        echo $form;
+                        ?><div class="page-navigation"><?php
+                            ?><p>Warning. The installation process can take between 3 and 15 minutes, depending the list of tasks to execute. Don't be affraid, the page will still be displayed at the end. Just press start and go take a coffee.</p><?php
+                            ?><a class="btn" href="./configure.php">Reset</a><?php
+                            ?><button type="submit" class="btn btn-primary">Submit</button><?php
+                        ?></div><?php
+                    ?></form><?php
                 ?></div><?php
             ?></body><?php
         ?></html><?php

@@ -78,6 +78,8 @@ As you can see, there is a lot of options, but everything is in this only file, 
 
 Once everything is configured, don't forget to change the layout of the installer to match with your. You change anything you want. And if your are a developer, feel free to add/edit/remove steps in the process to match with your expectations. The ony thing you have to do is playing with the smalls php files at the root of the installer.
 
+You can change the name of the installer's folder too. If you don't like ```my_site/melody``` you can rename to ```my_site/install``` or even ```my_site/whatever``` if you want to.
+
 Once everything is OK, don't forget to play your installer to see if everything is OK, but ALWAYS BACKUP YOUR INSTALLER FIRST !
 
 Now you can zip everything and spread your installer to the world.

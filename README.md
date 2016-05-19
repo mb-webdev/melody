@@ -6,18 +6,17 @@ Easy web installer for redistribuing Symfony projects.
 Melody is a simple web installer for deploying and delivering a Symfony project to people who don't want or can't execute manual installation.
 
 ## Features
-- [x] Install a given zip containing a Symfony project
-- [x] Possibility to define if the zip contains vendors too
-- [x] Possibility to define if the assets are already in the ```web``` folder
-- [x] Possibility to give a sql file to dump during the installing process
-- [x] Possibility to perform custom bash commands after the install process
-- [x] Check the system if it match with your requirements
-- [x] Check if the installer will need to perform PHP CLI commands and if the system support this feature
-- [x] Lock system which prevent multiple users using the installer at the same time
-- [x] Fully customizable layout and process
-- [x] Automatic breadcrumbs
-- [x] The installer remove itself at the end of the process
-- [ ] Multi language support (coming soon)
+- Install a given zip containing a Symfony project
+- Possibility to define if the zip contains vendors too
+- Possibility to define if the assets are already in the ```web``` folder
+- Possibility to give a sql file to dump during the installing process
+- Possibility to perform custom bash commands after the install process
+- Check the system if it match with your requirements
+- Check if the installer will need to perform PHP CLI commands and if the system support this feature
+- Lock system which prevent multiple users using the installer at the same time
+- Fully customizable layout and process
+- Automatic breadcrumbs
+- The installer remove itself at the end of the process
 
 ## How to create the installer
 
